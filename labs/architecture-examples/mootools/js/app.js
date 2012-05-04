@@ -31,6 +31,10 @@
             return b
         },
 
+        pluralize: function( count, word ) {
+            return count === 1 ? word : word + 's';
+        },
+
         loadTodos: function() {
             if ( !localStorage.getItem( 'todos-mootools' ) ) {
                 localStorage.setItem( 'todos-mootools', JSON.stringify( this.options.todos ) );
@@ -71,10 +75,17 @@
         },
 
         checkbox: function( event ) {
-            console.log(this.checked);
+            var id = $( event.target );
+            this.options.todos.each( function( item, index ) {
+                if ( item.id === id.get( 'data-todo-id' ) ) {
+                    item.completed = id.checked;
+                }
+            });
+            this.render();
         },
 
         render: function() {
+            console.log('ran');
             this.saveTodos( this.options.todos );
             this.options.todoList.set( 'html', '' );
             this.options.todos.each( function( item, index ) {
@@ -82,8 +93,9 @@
                     'class': 'toggle',
                     type: 'checkbox',
                     'data-todo-id': item.id,
+                    checked: ( item.completed ) ? true : false,
                     events: {
-                        change: this.checkbox
+                        change: this.checkbox.bind( this )
                     }
                 });
                 var label = new Element( 'label', {
@@ -108,7 +120,7 @@
                 });
                 var li = new Element( "li", {
                     id: 'li_' + item.id,
-                    'class': ( item.completed ) ? 'complete' : 'incomplete'
+                    'class': ( item.completed ) ? 'completed' : 'incomplete'
                 });
                 div.adopt( checkbox, label, del );
                 li.adopt( div );
