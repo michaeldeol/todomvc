@@ -19,7 +19,7 @@
         },
 
         initialize: function( options ) {
-            //this.setOptions( options );
+            this.setOptions( options );
             this.loadTodos();
             this.bindEvents();
             this.render();
@@ -48,6 +48,8 @@
 
         bindEvents: function() {
             this.options.newTodo.addEvent( 'keyup', this.create.bind( this ) );
+            this.options.toggleAll.addEvent( 'change', this.toggleAll.bind( this ) );
+            this.options.clear.addEvent( 'click', this.clear.bind( this ) );
         },
 
         create: function( event ) {
@@ -62,15 +64,45 @@
             this.render();
         },
 
+        editTodo: function( event ) {
+            var todoId = this.get( 'data-todo-id' );
+            $( 'li_' + todoId ).addClass( 'editing' );
+            $( 'input_' + todoId ).select();
+        },
+
+        updateTodo: function( event ) {
+            var val = event.target.value.trim();
+            if ( !val ) {
+                this.deleteTodo( event );
+            } else {
+                var id = $( event.target ).get( 'data-todo-id' );
+                this.options.todos.each( function( item, index ) {
+                    if ( item.id === id ) {
+                        item.title = val;
+                    }
+                });
+                this.render();
+            }
+        },
+
         deleteTodo: function( event ) {
             var id = $( event.target ).get( 'data-todo-id' );
             this.options.todos.each( function( item, index ) {
                 if ( item.id === id ) {
-                    id = index;
-                    return;
+                    this.options.todos.erase(item);
                 }
-            });
-            this.options.todos.splice( id, 1 );
+            }.bind( this ));
+            this.options.todos.clean();
+            this.render();
+        },
+
+        clear: function() {
+            var l = this.options.todos.length;
+            while ( l-- ) {
+                if ( this.options.todos[l].completed ) {
+                    this.options.todos.splice( l, 1 );
+                }
+            }
             this.render();
         },
 
@@ -84,12 +116,41 @@
             this.render();
         },
 
+        toggleAll: function() {
+            var checked = this.options.toggleAll.checked;
+            this.options.todos.each( function( item, index ) {
+                item.completed = ( checked ) ? true : false;
+            });
+            this.render();
+        },
+
+        stats: function() {
+            var display = 'block',
+                count =  this.options.todos.length;
+            if ( this.options.todos.length === 0 ) display = 'none';
+            $( 'footer' ).setStyle( 'display', display );
+            this.options.toggleAll.setStyle( 'display', display );
+            this.options.count.set( 'html', '<strong>' + count + '</strong> ' + this.pluralize( count, 'item' ) + ' left' );
+
+            count = 0;
+            this.options.todos.each( function( item, index ) {
+                if ( item.completed ) count += 1;
+            });
+            this.options.clear.set( 'text', 'Clear completed (' + count + ')' );
+
+            if ( count === 0 ) display = 'none';
+            this.options.clear.setStyle( 'display', display );
+        },
+
         render: function() {
-            console.log('ran');
+            var checkbox,label, del, div, edit, li;
+            var allComplete = 0;
+            var complete = true;
             this.saveTodos( this.options.todos );
             this.options.todoList.set( 'html', '' );
             this.options.todos.each( function( item, index ) {
-                var checkbox = new Element( 'input', {
+                if ( item.completed ) allComplete += 1;
+                checkbox = new Element( 'input', {
                     'class': 'toggle',
                     type: 'checkbox',
                     'data-todo-id': item.id,
@@ -98,34 +159,47 @@
                         change: this.checkbox.bind( this )
                     }
                 });
-                var label = new Element( 'label', {
+                label = new Element( 'label', {
                     'data-todo-id': item.id,
                     text: item.title
                 });
-                var del = new Element( 'button', {
+                del = new Element( 'button', {
                     'class': 'destroy',
                     'data-todo-id': item.id,
                     events: {
                         click: this.deleteTodo.bind( this )
                     }
                 });
-                var div = new Element( 'div', {
+                div = new Element( 'div', {
                     'class': 'view',
                     'data-todo-id': item.id,
                     events: {
-                        dblclick: function() {
-                            console.log('dbclick event fired');
-                        }
+                        dblclick: this.editTodo
                     }
                 });
-                var li = new Element( "li", {
+                edit = new Element( 'input', {
+                    id: 'input_' + item.id,
+                    'data-todo-id': item.id,
+                    'class': 'edit',
+                    value: item.title,
+                    events: {
+                        keypress: function( event ) {
+                            if ( event.code === this.options.ENTER_KEY ) this.updateTodo( event );
+                        }.bind( this ),
+                        blur: this.updateTodo.bind( this )
+                    }
+                });
+                li = new Element( "li", {
                     id: 'li_' + item.id,
                     'class': ( item.completed ) ? 'completed' : 'incomplete'
                 });
                 div.adopt( checkbox, label, del );
-                li.adopt( div );
+                li.adopt( div, edit );
                 this.options.todoList.adopt(li);
             }.bind( this ));
+            if ( allComplete !== this.options.todos.length ) complete = false;
+            this.options.toggleAll.checked = complete;
+            this.stats();
         }
 
     });
@@ -133,8 +207,7 @@
     // Your starting point. Enjoy the ride!
     window.addEvent( 'domready', function() {
 
-        // lets party
-        var testDo = new Todo();
+        var todo = new Todo();
 
     });
 
