@@ -1,6 +1,6 @@
 # MooTools • [TodoMVC](http://todomvc.com)
 
-An implementation of the TodoMVC example to [MooTools](http://mootools.net)
+An implementation of the TodoMVC example using [MooTools](http://mootools.net)
 
 ## Credit
 
