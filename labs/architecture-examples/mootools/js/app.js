@@ -144,8 +144,8 @@
 
         render: function() {
             var checkbox,label, del, div, edit, li;
-            var allComplete = 0;
-            var complete = true;
+            var allComplete = 0,
+                complete = true;
             this.saveTodos( this.options.todos );
             this.options.todoList.set( 'html', '' );
             this.options.todos.each( function( item, index ) {
